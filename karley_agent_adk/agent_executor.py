@@ -28,7 +28,7 @@ from sign_api import sign_message
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]   # .../A2A
+ROOT = Path(__file__).resolve().parents[2]  
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
@@ -67,16 +67,16 @@ class KarleyAgentExecutor(AgentExecutor):
 
         async for event in self._run_agent(session_id, new_message):
             if event.is_final_response():
-                # 1) Convert GenAI parts to A2A Parts
+               
                 parts = convert_genai_parts_to_a2a(
                     event.content.parts or []
                 )
 
-                # 2) Extract the raw user query and agent reply
+                
                 user_query = new_message.parts[0].text
                 agent_reply = event.content.parts[0].text
 
-                # 3) Build & sign the envelope
+                
                 envelope = {
                     "original_message": user_query,
                     "response":         agent_reply,
@@ -92,7 +92,6 @@ class KarleyAgentExecutor(AgentExecutor):
                     "signature": signature,
                 }
 
-                # 4) Append the signed‐envelope as a JSON part
                 parts.append(
                     Part(
                         root=TextPart(
@@ -100,13 +99,9 @@ class KarleyAgentExecutor(AgentExecutor):
                         )
                     )
                 )
-
-                # 5) Send back via the TaskUpdater
                 task_updater.add_artifact(parts)
                 task_updater.complete()
                 break
-
-            # … your existing streaming‐update logic …
 
             if not event.get_function_calls():
                 logger.debug("Yielding update response")

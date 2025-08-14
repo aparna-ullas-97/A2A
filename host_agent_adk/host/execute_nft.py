@@ -80,7 +80,6 @@ def signature_response(
     }
     print("payload", payload)
     try:
-        # Send it directly, not wrapped in {"input": ...}
         print("Executing NFT...")
         resp = requests.post(url, json=payload)
         resp.raise_for_status()
@@ -116,7 +115,6 @@ def execute_and_sign(
       2) call signature-response on the returned id/mode
     Returns a dict with id, mode, and signature.
     """
-    # 1) initiate execution
     result = execute_nft(
         comment=comment,
         executor=executor,
@@ -129,7 +127,6 @@ def execute_and_sign(
         timeout=timeout,
     )
 
-    # 2) sign the execution
     sig = signature_response(
         deploy_id=result["id"],
         mode=result["mode"],
@@ -145,17 +142,3 @@ def execute_and_sign(
     }
 
 
-# # ────────────── Example usage ──────────────
-# if __name__ == "__main__":
-#     out = execute_and_sign(
-#         comment="new response",
-#         nft="QmagiNcz23HVMzMeRp9VrGYHCJAMsbujEHJ2Q5QPZzeWEq",
-#         password="mypassword",
-#         executor="bafybmicjf5eulsyudab2a7fcfo5nh2ajhtupid5xx4fzr72m3tcysztyoi",
-#         nft_data="string",
-#         nft_value=1,
-#         quorum_type=2,
-#         receiver="",
-#     )
-#     print("Execute-NFT ID:", out["id"])
-#     print("Signature:", out["signature"])

@@ -47,11 +47,10 @@ from .pickleball_tools import (
 )
 from .remote_agent_connection import RemoteAgentConnections
 
-# Load environment and allow overrides for NFT defaults
 load_dotenv()
 nest_asyncio.apply()
 
-nft_cfg = load_nft_config()  # reads CONFIG_PATH or defaults to repo-root/config.json
+nft_cfg = load_nft_config()  
 
 DEFAULT_METADATA_PATH = nft_cfg["metadata_path"]
 DEFAULT_ARTIFACT_PATH = nft_cfg["artifact_path"]
@@ -79,17 +78,16 @@ class HostAgent:
         self.cards: dict[str, AgentCard] = {}
         self.agents: str = ""
         self._agent = self.create_agent()
-        # ── NEW ── fire NFT flow synchronously at startup ──
 
         current_dir = os.path.dirname(__file__)
         file_path = os.path.join(current_dir, "token.txt")
 
         with open(file_path, "r", encoding="utf-8") as f:
-            token = f.read().strip()  # Read entire file and remove any whitespace/newlines
+            token = f.read().strip() 
 
         self.nft_token = token
 
-        if token:  # Token exists in file
+        if token:  
             self.nft_token = token
             print("⚠️ Using Written NFT:", self.nft_token)
         else:  
@@ -110,7 +108,7 @@ class HostAgent:
                 self.nft_token = result["nft_token"]
                 print("🚀 NFT ID:", self.nft_token)
 
-                # Save token to file for next time
+                
                 with open(file_path, "w", encoding="utf-8") as f:
                     f.write(self.nft_token)
 
@@ -269,7 +267,6 @@ class HostAgent:
             for artifact in json_content.get("result", {}).get("artifacts", []):
                 resp_parts.extend(artifact.get("parts", []))
 
-        # Phase 1: Verify envelopes, check original matches
         verified: list[dict] = []
         trust_issues: list[str] = []
         for part in resp_parts:
@@ -280,21 +277,17 @@ class HostAgent:
                     signer    = payload["agent"]
                     signature = payload["signature"]
                     env       = payload["envelope"]
-                    # Unwrap if stringified
                     if isinstance(env, str):
                         env = json.loads(env)
-                    # Verify signature
                     envelope_json = json.dumps(env, sort_keys=True)
                     if not verify_signature(signer, envelope_json, signature):
                         trust_issues.append("Invalid signature")
                         continue
-                    # Check original message
                     if env.get("original_message") != task:
                         trust_issues.append(
                             f"Original mismatch: expected '{task}', got '{env.get('original_message')}'"
                         )
                         continue
-                    # All good, append
                     verified.append({
                         "agent":          agent_name,
                         "response":       env["response"],
@@ -302,15 +295,12 @@ class HostAgent:
                         "signature":      signature,
                         "signature_valid": True,
                     })
-                # skip non-envelope parts
             except (ValueError, TypeError, json.JSONDecodeError):
                 continue
 
-        # If nothing verified and no send error, note issue
         if not verified and not error_msg:
             error_msg = "No valid envelope response"
 
-        # Phase 2: Sign the structured verified list as NFT metadata
         if error_msg:
             payload["verification_message"] = "data poisoning detected"
         else:   
@@ -343,7 +333,6 @@ class HostAgent:
             if not error_msg:
                 error_msg = str(e)
 
-        # Determine UI message
         if trust_issues:
             ui_msg = "Trust issues detected: " + "; ".join(trust_issues)
         elif error_msg:
@@ -352,7 +341,6 @@ class HostAgent:
             ui_msg = "All messages verified successfully"
         print(f"UI: {ui_msg}")
 
-        # Return full result with trust info
         result = {
             "messages":      verified,
             "nft_execution": nft_execution,
@@ -379,23 +367,22 @@ class HostAgent:
         Executes an NFT action by calling your execute_and_sign helper.
         — Packs up all of self.last_parts as the nft_data JSON.
         """
-        # 1. Serialize the last_parts list into your NFT metadata:
         nft_data = json.dumps(self.last_parts)
 
         try:
-            # 2. Run the blocking execute_and_sign in a thread
+            
             result = await asyncio.to_thread(
                 execute_and_sign,
                 comment,
                 nft,
                 password,
                 executor,
-                nft_data,        # now comes from self.last_parts
+                nft_data,        
                 DEFAULT_NFT_VALUE,
                 DEFAULT_QUORUM_TYPE,
                 receiver,
-                None,            # base_url (uses default)
-                DEFAULT_TIMEOUT, # timeout
+                None,            
+                DEFAULT_TIMEOUT, 
             )
             return {
                 "status": "success",
@@ -411,7 +398,7 @@ class HostAgent:
         tool_context: ToolContext = None,
     ) -> dict:
         """Mints an NFT, stages on-chain deployment, and signs the transaction without prompting."""
-        # Hardcoded or environment-driven defaults
+        
         did = DEFAULT_NFT_DID
         metadata_path = DEFAULT_METADATA_PATH
         artifact_path = DEFAULT_ARTIFACT_PATH

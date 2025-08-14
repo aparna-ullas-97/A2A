@@ -1,4 +1,3 @@
-# file: host/utils/node_client.py
 from __future__ import annotations
 from pathlib import Path
 import os, json, requests
@@ -12,19 +11,17 @@ class NodeClient:
 
     def __init__(
         self,
-        framework: Optional[str] = None,       # e.g., "host", "langgraph", "crew", "adk"
+        framework: Optional[str] = None,      
         port: Optional[int] = None,
         base_url: Optional[str] = None,
         config_path: Optional[Union[str, Path]] = None,
     ):
-        # If config_path not provided, set it to repo root/config.json
         if not config_path:
-            # utils is in A2A/utils, so config.json is one level up from utils
+          
             config_path = Path(__file__).resolve().parent.parent / "config.json"
 
         print("config path:", config_path)
 
-        # If framework is provided, look for "{framework}_port" in config
         framework_port = self._read_framework_port(framework, config_path)
 
         self.base_url = (
@@ -33,7 +30,6 @@ class NodeClient:
             or f"http://localhost:{framework_port or port or self._read_port_from_config(config_path)}"
         )
 
-    # --- public API ---
     def get_base_url(self) -> str:
         return self.base_url
 
@@ -49,7 +45,6 @@ class NodeClient:
         except Exception as e:
             print(f"⚠️ Failed to fetch DID from API: {e}")
 
-    # --- helpers ---
     @staticmethod
     def _read_framework_port(framework: str, config_path: Optional[Union[str, Path]]) -> Optional[int]:
         """
@@ -80,6 +75,5 @@ class NodeClient:
 
     @staticmethod
     def _default_config_path() -> Path:
-        # repo root = two levels up from this file (…/A2A)
         here = Path(__file__).resolve()
         return here.parents[2] / "config.json"

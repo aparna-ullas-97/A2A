@@ -76,10 +76,8 @@ class SchedulingAgentExecutor(AgentExecutor):
 
         envelope_json = json.dumps(envelope, sort_keys=True)
 
-        # Build the response parts
         parts = [Part(root=TextPart(text=result))]
 
-        # Add a custom message to the host
         signature = "nates_signature"
         try:
             did = default_did
@@ -97,8 +95,6 @@ class SchedulingAgentExecutor(AgentExecutor):
                 "signature": signature
             })))
         ]
-
-        # Send back the combined response
         await updater.add_artifact(parts)
         await updater.complete()
 

@@ -1,4 +1,4 @@
-# host/config_loader.py (works for all agents)
+
 from __future__ import annotations
 from pathlib import Path
 import os, json
@@ -17,7 +17,6 @@ def _find_cfg(start: Path, filename: str = "config.json", max_up: int = 5) -> Pa
     raise FileNotFoundError(f"{filename} not found starting at {start}")
 
 def _default_cfg_path() -> Path:
-    # Start from this file's folder; walk up until config.json is found.
     return _find_cfg(Path(__file__).parent)
 
 def load_config(path: str | os.PathLike | None = None) -> Dict[str, Any]:

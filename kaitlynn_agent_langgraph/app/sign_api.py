@@ -5,7 +5,7 @@ import requests
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]   # .../A2A
+ROOT = Path(__file__).resolve().parents[2]  
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
@@ -46,7 +46,6 @@ def sign_message(msg_hash: str, did: str | None = None, password: str | None = N
     pw = default_password
     base = default_base_url.rstrip('/')
 
-    # 1) Initial sign request
     try:
         resp = requests.post(
             f"{base}/api/sign",
@@ -63,11 +62,9 @@ def sign_message(msg_hash: str, did: str | None = None, password: str | None = N
     except ValueError as e:
         raise APIError(f"Invalid JSON in initial sign response: {e}") from e
 
-    # Did we get an immediate signature?
     if data.get("status") and isinstance(data.get("result"), str):
         return data["result"]
 
-    # Otherwise, expect an object with id + mode
     if not data.get("status") or not isinstance(data.get("result"), dict):
         raise APIError(f"Unexpected sign response: {data}")
 
@@ -77,7 +74,6 @@ def sign_message(msg_hash: str, did: str | None = None, password: str | None = N
     if sign_id is None:
         raise APIError(f"Sign API returned no id/mode for password flow: {result}")
 
-    # 2) Password‐based signature‐response
     try:
         resp2 = requests.post(
             f"{base}/api/signature-response",
@@ -97,7 +93,6 @@ def sign_message(msg_hash: str, did: str | None = None, password: str | None = N
     if not data2.get("status"):
         raise APIError(f"Signature-response API returned error: {data2.get('message', '<no message>')}")
 
-    # Pull out the final signature
     sig = data2.get("result", {}).get("signature")
     if not sig:
         raise APIError("Signature-response API succeeded but no `signature` in result")

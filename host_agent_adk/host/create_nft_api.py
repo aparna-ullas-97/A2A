@@ -5,7 +5,7 @@ import sys
 import requests
 from typing import Optional, Dict
 
-ROOT = Path(__file__).resolve().parents[2]   # .../A2A
+ROOT = Path(__file__).resolve().parents[2]  
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
@@ -30,7 +30,7 @@ def create_nft(
 ) -> str:
     print("CREATE")
     url = (base_url or default_base_url).rstrip("/") + "/api/create-nft"
-    # split out did as a text field, and only metadata+artifact in files
+   
     data = {"did": did or default_did}
     files = {
         "metadata": (
@@ -57,7 +57,7 @@ def create_nft(
         raise APIError(f"Invalid JSON in create_nft response: {e}") from e
     finally:
         for _name, f in files.items():
-            # close any file handles
+            
             if hasattr(f[1], "close"):
                 f[1].close()
 
@@ -122,7 +122,7 @@ def signature_response(
 ) -> str:
     url = (base_url or default_base_url).rstrip("/") + "/api/signature-response"
 
-    # Build the flat payload exactly as Swagger expects:
+   
     payload = {
         "id": deploy_id,
         "mode": mode,
@@ -131,7 +131,7 @@ def signature_response(
     print("SIGNATURE-REQUEST >", payload)
 
     try:
-        # Send it directly, not wrapped in {"input": ...}
+        
         resp = requests.post(url, json=payload)
         resp.raise_for_status()
         data = resp.json()
@@ -156,7 +156,6 @@ def mint_deploy_and_sign(
     did: Optional[str] = None,
     base_url: Optional[str] = None,
     timeout: float = 10.0,
-    # below args are passed straight to deploy_nft; adjust as you like
     nft_data: str = "",
     nft_value: int = 1,
     quorum_type: int = 2,
@@ -172,10 +171,10 @@ def mint_deploy_and_sign(
         "signature": "3044…"
       }
     """
-    # 1) mint
+    
     token = create_nft(did, metadata_path, artifact_path, base_url, timeout)
 
-    # 2) stage deployment
+    
     deploy_info = deploy_nft(
         did or default_did,
         token,
@@ -188,24 +187,10 @@ def mint_deploy_and_sign(
         timeout=timeout,
     )
 
-    # 3) sign it
+    
     sig = signature_response(deploy_info["id"], deploy_info["mode"], password, base_url, timeout)
 
     return {
         "nft_token": token,
         "signature": sig,
     }
-
-# # ────────────── Example usage ──────────────
-# if __name__ == "__main__":
-#     out = mint_deploy_and_sign(
-#         metadata_path="/Users/rameshsubramani/Downloads/sample.json",
-#         artifact_path="/Users/rameshsubramani/Downloads/Bugs.pdf",
-#         password="mypassword",
-#         did=None,            # or override
-#         nft_data="optional data here",
-#         nft_value=1,
-#         quorum_type=2,
-#     )
-#     print("Minted NFT:", out["nft_token"])
-#     print("Chain signature:", out["signature"])

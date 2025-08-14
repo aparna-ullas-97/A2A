@@ -67,13 +67,13 @@ class KaitlynAgentExecutor(AgentExecutor):
                     )
                     break
                 else:
-                    # Build envelope with original query and agent response
+                    
                     agent_response = item["content"]
                     envelope = {
                         "original_message": query,
                         "response": agent_response,
                     }
-                    # Canonicalize and sign the envelope
+                    
                     envelope_json = json.dumps(envelope, sort_keys=True)
                     try:
                         did = default_did
@@ -87,7 +87,6 @@ class KaitlynAgentExecutor(AgentExecutor):
                         "envelope": envelope,
                         "signature": signature,
                     }
-                    # Append both plain reply and signed envelope
                     parts.append(
                         Part(
                             root=TextPart(
@@ -96,7 +95,6 @@ class KaitlynAgentExecutor(AgentExecutor):
                         )
                     )
 
-                    # Return artifacts and complete
                     await updater.add_artifact(parts, name="scheduling_result")
                     await updater.complete()
                     break

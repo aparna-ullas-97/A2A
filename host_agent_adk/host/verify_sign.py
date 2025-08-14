@@ -43,20 +43,6 @@ def verify_signature(
     except ValueError as e:
         raise APIError(f"Invalid JSON in verify_signature response: {e}") from e
 
-    # API returns {"status": bool, "message": str, "result": null}
-    # If status is True, signature is valid
+    
     return bool(data.get("status", False))
 
-
-# # ────────────── Example usage ──────────────
-# if __name__ == "__main__":
-#     # Example parameters
-#     signer = "bafybmicjf5eulsyudab2a7fcfo5nh2ajhtupid5xx4fzr72m3tcysztyoi"
-#     message = "hello"
-#     sig = "304402203ed035ead8950366231f0aac14c7aba8fdcd529eeba8734eb00dd98ed7bbf5530220448587e47c36a33de8ed9546fe4927acf26bdd4014a33006ad00c4d5f34efa8c"
-
-#     try:
-#         valid = verify_signature(signer, message, sig)
-#         print(f"Signature valid? {valid}")
-#     except APIError as err:
-#         print(f"Error verifying signature: {err}")

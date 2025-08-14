@@ -13,21 +13,17 @@ print("✅ Using BASE URL:", default_base_url)
 
 print("✅ Using DID for details:", default_did)
 
-# 2) Endpoint + query params
 endpoint = "/api/get-account-info"
 params   = {
     "did": default_did
 }
 
-# 3) Headers (adjust or omit as your API requires)
 headers = {
     "Accept":        "application/json",
 }
 
-# 4) Make the GET request
 resp = requests.get(f"{default_base_url}{endpoint}", headers=headers, params=params)
 
-# 5) Check for errors & parse
 try:
     resp.raise_for_status()
     data = resp.json()
