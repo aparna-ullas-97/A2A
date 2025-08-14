@@ -72,7 +72,7 @@ class HostAgent:
         if token:  # Token exists in file
             self.nft_token = token
             print("⚠️ Using Written NFT:", self.nft_token)
-        else:  # No token found → run mint block
+        else:  
             try:
                 result = mint_deploy_and_sign(
                     metadata_path=DEFAULT_METADATA_PATH,
