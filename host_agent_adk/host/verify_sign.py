@@ -4,28 +4,16 @@ from pathlib import Path
 import requests
 from typing import Optional
 
+from utils.node_client import NodeClient
+
 
 class APIError(Exception):
     """Raised when an external API call fails or returns invalid data."""
     pass
 
 
-# Base URL for the service (can override via env var)
-# default_base_url = os.getenv("BASE_URL", "http://localhost:20007")
-
-HERE = Path(__file__).resolve()
-ROOT = HERE.parents[2]                  # .../A2A
-cfg_path = Path(os.getenv("CONFIG_PATH", ROOT / "config.json"))
-
-if not cfg_path.exists():
-    raise FileNotFoundError(f"config.json not found at: {cfg_path}")
-
-with cfg_path.open("r", encoding="utf-8") as f:
-    cfg = json.load(f)
-
-port = int(cfg.get("host_port", 20007))
-default_base_url = os.getenv("BASE_URL", f"http://localhost:{port}")
-print("Base URL =>", default_base_url)
+node = NodeClient(framework="host")
+default_base_url = node.get_base_url()  
 
 
 def verify_signature(
@@ -39,7 +27,7 @@ def verify_signature(
     Calls GET /api/verify-signature to verify a signature for a given DID and signed message.
     Returns True if verification passed, False otherwise.
     """
-    url = (base_url or default_base_url).rstrip("/") + "/api/verify-signature"
+    url = (default_base_url).rstrip("/") + "/api/verify-signature"
     params = {
         "signer_did": signer_did,
         "signed_msg": signed_msg,

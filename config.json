@@ -2,5 +2,14 @@
     "host_port": 20007,
     "langgraph_port":20000,
     "crew_port": 20001,
-    "adk_port": 20002
+    "adk_port": 20002,
+    "nft": {
+        "metadata_path": "metadata_path_here",
+        "artifact_path": "artifact_path_here",
+        "password": "mypassword",
+        "timeout": 100.0,
+        "data": "new responses",
+        "value": 5,
+        "quorum_type": 2
+    }
 }

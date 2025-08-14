@@ -1,51 +1,24 @@
 import os
 import json
 from pathlib import Path
+import sys
 import requests
 from typing import Optional, Dict
+
+ROOT = Path(__file__).resolve().parents[2]   # .../A2A
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from utils.node_client import NodeClient 
 
 class APIError(Exception):
     """Raised when an external API call fails or returns invalid data."""
     pass
 
-# Base URL for the service (can override via env var)
-# default_base_url = os.getenv("API_BASE_URL", "http://localhost:20007")
-# default_did = "bafybmicjf5eulsyudab2a7fcfo5nh2ajhtupid5xx4fzr72m3tcysztyoi"
+node = NodeClient(framework="host")
+default_base_url = node.get_base_url()  
+default_did = node.get_did()
 
-HERE = Path(__file__).resolve()
-ROOT = HERE.parents[2]                  # .../A2A
-cfg_path = Path(os.getenv("CONFIG_PATH", ROOT / "config.json"))
-
-if not cfg_path.exists():
-    raise FileNotFoundError(f"config.json not found at: {cfg_path}")
-
-with cfg_path.open("r", encoding="utf-8") as f:
-    cfg = json.load(f)
-
-port = int(cfg.get("host_port", 20007))
-default_base_url = os.getenv("BASE_URL", f"http://localhost:{port}")
-print("Base URL =>", default_base_url)
-
-def get_default_did():
-    try:
-        url = f"{default_base_url}/api/get-by-node"
-        response = requests.get(url, timeout=5)
-        response.raise_for_status()
-        data = response.json()
-
-        # Get first DID if available
-        if data.get("TxnCount") and len(data["TxnCount"]) > 0:
-            return data["TxnCount"][0]["DID"]
-
-        print("⚠️ No DID found in API response, using fallback.")
-        return "fallback_did_here"
-
-    except Exception as e:
-        print(f"⚠️ Failed to fetch DID from API: {e}")
-        return "fallback_did_here"
-
-# Use the API result
-default_did = get_default_did()
 print("✅ Using DID:", default_did)
 
 def create_nft(
@@ -159,20 +132,16 @@ def signature_response(
 
     try:
         # Send it directly, not wrapped in {"input": ...}
-        print("Here1")
         resp = requests.post(url, json=payload)
         resp.raise_for_status()
         data = resp.json()
         print("SIGNATURE-RESPONSE >", data)
     except requests.RequestException as e:
-        print("Here2")
         raise APIError(f"HTTP error during signature_response: {e}") from e
     except ValueError as e:
-        print("Here3")
         raise APIError(f"Invalid JSON in signature_response: {e}") from e
 
     if not data.get("status", False):
-        print("Here4")
         raise APIError(f"Signature-Response API returned error: {data.get('message', '<no message>')}")
 
     print("Here5")

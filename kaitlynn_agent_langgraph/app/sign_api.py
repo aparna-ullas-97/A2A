@@ -2,52 +2,24 @@ import json
 import os
 from pathlib import Path
 import requests
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]   # .../A2A
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from utils.node_client import NodeClient 
 
 class APIError(Exception):
     """Raised when the external API call fails or returns invalid data."""
     pass
 
-# # Base URL for the service
-# default_base_url = os.getenv("API_BASE_URL", "http://localhost:20000")
-# # Default DID (optional)
-# default_did = "bafybmigkmdklseni5ynibyyy5yp67rfn7tx2k2j7gdkulefy5cbhh7jnii"
-# # The password to feed into the signature-response endpoint
 default_password = "mypassword"
 
-HERE = Path(__file__).resolve()
-ROOT = HERE.parents[2]                  # .../A2A
-cfg_path = Path(os.getenv("CONFIG_PATH", ROOT / "config.json"))
-
-if not cfg_path.exists():
-    raise FileNotFoundError(f"config.json not found at: {cfg_path}")
-
-with cfg_path.open("r", encoding="utf-8") as f:
-    cfg = json.load(f)
-
-port = int(cfg.get("langgraph_port"))
-default_base_url = os.getenv("BASE_URL", f"http://localhost:{port}")
-print("Sign Base URL =>", default_base_url)
-
-def get_default_did():
-    try:
-        url = f"{default_base_url}/api/get-by-node"
-        response = requests.get(url, timeout=5)
-        response.raise_for_status()
-        data = response.json()
-
-        # Get first DID if available
-        if data.get("TxnCount") and len(data["TxnCount"]) > 0:
-            return data["TxnCount"][0]["DID"]
-
-        print("⚠️ No DID found in API response, using fallback.")
-        return "fallback_did_here"
-
-    except Exception as e:
-        print(f"⚠️ Failed to fetch DID from API: {e}")
-        return "fallback_did_here"
-
-# Use the API result
-default_did = get_default_did()
+node = NodeClient(framework="langgraph")
+default_base_url = node.get_base_url()  
+default_did = node.get_did()
 print("✅ Using DID for signing:", default_did)
 
 def sign_message(msg_hash: str, did: str | None = None, password: str | None = None) -> str:

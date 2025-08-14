@@ -1,13 +1,18 @@
 import os
 import requests
 
-# 1) Configuration
-BASE_URL   = os.getenv("API_BASE_URL", "http://localhost:20000")
+from utils.node_client import NodeClient
+
+
+node = NodeClient(framework="host")
+BASE_URL = node.get_base_url()  
+default_did = node.get_did()
+
 
 # 2) Endpoint + query params
 endpoint = "/api/get-account-info"
 params   = {
-    "did": "bafybmigkmdklseni5ynibyyy5yp67rfn7tx2k2j7gdkulefy5cbhh7jnii"
+    "did": default_did
 }
 
 # 3) Headers (adjust or omit as your API requires)

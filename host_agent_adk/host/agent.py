@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import Any, AsyncIterable, List, Optional
 import requests
 
+from .config_loader import load_nft_config
 import httpx
 import nest_asyncio
 from a2a.client import A2ACardResolver
@@ -31,6 +32,15 @@ from host.create_nft_api import APIError, mint_deploy_and_sign
 from host.execute_nft import execute_and_sign, APIError  
 from host.verify_sign import verify_signature
 
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]   # .../A2A
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from utils.node_client import NodeClient 
+
 from .pickleball_tools import (
     book_pickleball_court,
     list_court_availabilities,
@@ -41,53 +51,25 @@ from .remote_agent_connection import RemoteAgentConnections
 load_dotenv()
 nest_asyncio.apply()
 
-# Hardcoded NFT parameters (override via env vars if desired)
-# DEFAULT_NFT_DID = "bafybmicjf5eulsyudab2a7fcfo5nh2ajhtupid5xx4fzr72m3tcysztyoi"
-DEFAULT_METADATA_PATH = "/Users/rameshsubramani/Downloads/sample.json"
-DEFAULT_ARTIFACT_PATH = "/Users/rameshsubramani/Downloads/Bugs.pdf"
-DEFAULT_NFT_PASSWORD = "mypassword"
-# DEFAULT_BASE_URL = "http://localhost:20007"
-DEFAULT_TIMEOUT = 100.0
-DEFAULT_NFT_DATA = "new responses"
-DEFAULT_NFT_VALUE = 5
-DEFAULT_QUORUM_TYPE = 2
-NFT_ID = ""
+nft_cfg = load_nft_config()  # reads CONFIG_PATH or defaults to repo-root/config.json
 
-HERE = Path(__file__).resolve()
-ROOT = HERE.parents[2]                  # .../A2A
-cfg_path = Path(os.getenv("CONFIG_PATH", ROOT / "config.json"))
+DEFAULT_METADATA_PATH = nft_cfg["metadata_path"]
+DEFAULT_ARTIFACT_PATH = nft_cfg["artifact_path"]
+DEFAULT_NFT_PASSWORD = nft_cfg["password"]
+DEFAULT_TIMEOUT      = nft_cfg["timeout"]
+DEFAULT_NFT_DATA     = nft_cfg["data"]
+DEFAULT_NFT_VALUE    = nft_cfg["value"]
+DEFAULT_QUORUM_TYPE  = nft_cfg["quorum_type"]
 
-if not cfg_path.exists():
-    raise FileNotFoundError(f"config.json not found at: {cfg_path}")
+node = NodeClient(framework="host")
+DEFAULT_BASE_URL = node.get_base_url() 
+DEFAULT_NFT_DID = node.get_did()
 
-with cfg_path.open("r", encoding="utf-8") as f:
-    cfg = json.load(f)
+print("✅ Host Agent Using DID for details:", DEFAULT_NFT_DID)
+print("✅ Host Agent Using base URL:", DEFAULT_BASE_URL)
 
-port = int(cfg.get("host_port", 20007))
-DEFAULT_BASE_URL = os.getenv("BASE_URL", f"http://localhost:{port}")
-print("Base URL =>", DEFAULT_BASE_URL)
 
-def get_default_did():
-    try:
-        url = f"{DEFAULT_BASE_URL}/api/get-by-node"
-        response = requests.get(url, timeout=5)
-        response.raise_for_status()
-        data = response.json()
-
-        # Get first DID if available
-        if data.get("TxnCount") and len(data["TxnCount"]) > 0:
-            return data["TxnCount"][0]["DID"]
-
-        print("⚠️ No DID found in API response, using fallback.")
-        return "fallback_did_here"
-
-    except Exception as e:
-        print(f"⚠️ Failed to fetch DID from API: {e}")
-        return "fallback_did_here"
-
-# Use the API result
-DEFAULT_NFT_DID = get_default_did()
-print("✅ Using DID:", DEFAULT_NFT_DATA)
+print("✅ Using DID:", DEFAULT_NFT_DID)
 
 class HostAgent:
     """The Host agent."""
@@ -112,6 +94,7 @@ class HostAgent:
             print("⚠️ Using Written NFT:", self.nft_token)
         else:  
             try:
+                print("DIDDDDDDD...", DEFAULT_NFT_DID)
                 result = mint_deploy_and_sign(
                     metadata_path=DEFAULT_METADATA_PATH,
                     artifact_path=DEFAULT_ARTIFACT_PATH,
