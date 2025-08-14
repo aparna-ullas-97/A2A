@@ -1,3 +1,6 @@
 {
-    "host_port": 20007
+    "host_port": 20007,
+    "langgraph_port":20000,
+    "crew_port": 20001,
+    "adk_port": 20002
 }
