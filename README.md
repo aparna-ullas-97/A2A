@@ -17,7 +17,7 @@ Before running the application locally, ensure you have the following installed:
 2. **python 3.13** Python 3.13 is required to run a2a-sdk 
 3. **set up .env** 
 
-Create a `.env` file in the root of the `a2a_friend_scheduling` directory with your Google API Key:
+Create a `.env` file in the root of the `project` directory with your Google API Key:
 ```
 GOOGLE_API_KEY="your_api_key_here" 
 ```
