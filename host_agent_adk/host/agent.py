@@ -60,27 +60,42 @@ class HostAgent:
         self.agents: str = ""
         self._agent = self.create_agent()
         # ── NEW ── fire NFT flow synchronously at startup ──
-        try:
-            result = mint_deploy_and_sign(
-                metadata_path=DEFAULT_METADATA_PATH,
-                artifact_path=DEFAULT_ARTIFACT_PATH,
-                password=DEFAULT_NFT_PASSWORD,
-                did=DEFAULT_NFT_DID,
-                base_url=DEFAULT_BASE_URL,
-                timeout=DEFAULT_TIMEOUT,
-                nft_data=DEFAULT_NFT_DATA,
-                nft_value=DEFAULT_NFT_VALUE,
-                quorum_type=DEFAULT_QUORUM_TYPE,
-            )
-            print("🚀 Startup mint result:", result)
-            self.nft_token = result["nft_token"]
-            NFT_ID = result["nft_token"]
-            print("new NFT")
-            print("🚀 NFT ID:", NFT_ID)
-        except Exception as e:
-            print("old NFT")
-            self.nft_token = "QmT5x3DcBXs248i5335XY8Y4ig5dRJ74HXYDnKZXqgfKMX"
-            print("⚠️ Startup mint FAILED:", e)
+
+        current_dir = os.path.dirname(__file__)
+        file_path = os.path.join(current_dir, "token.txt")
+
+        with open(file_path, "r", encoding="utf-8") as f:
+            token = f.read().strip()  # Read entire file and remove any whitespace/newlines
+
+        self.nft_token = token
+
+        if token:  # Token exists in file
+            self.nft_token = token
+            print("⚠️ Using Written NFT:", self.nft_token)
+        else:  # No token found → run mint block
+            try:
+                result = mint_deploy_and_sign(
+                    metadata_path=DEFAULT_METADATA_PATH,
+                    artifact_path=DEFAULT_ARTIFACT_PATH,
+                    password=DEFAULT_NFT_PASSWORD,
+                    did=DEFAULT_NFT_DID,
+                    base_url=DEFAULT_BASE_URL,
+                    timeout=DEFAULT_TIMEOUT,
+                    nft_data=DEFAULT_NFT_DATA,
+                    nft_value=DEFAULT_NFT_VALUE,
+                    quorum_type=DEFAULT_QUORUM_TYPE,
+                )
+                print("🚀 Startup mint result:", result)
+                self.nft_token = result["nft_token"]
+                print("🚀 NFT ID:", self.nft_token)
+
+                # Save token to file for next time
+                with open(file_path, "w", encoding="utf-8") as f:
+                    f.write(self.nft_token)
+
+            except Exception as e:
+                print("⚠️ Error while creating NFT:", e)
+
         self._user_id = "host_agent"
         self.last_parts: List[dict] = []
         self._runner = Runner(
