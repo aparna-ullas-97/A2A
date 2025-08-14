@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import requests
 import json
 from typing import Optional, Dict
@@ -8,9 +9,45 @@ class APIError(Exception):
     pass
 
 # Base URL for the service (can override via env var)
-default_base_url = "http://localhost:20007"
-# Default DID for executor if not provided
-default_did = "bafybmicjf5eulsyudab2a7fcfo5nh2ajhtupid5xx4fzr72m3tcysztyoi"
+# default_base_url = "http://localhost:20007"
+# # Default DID for executor if not provided
+# default_did = "bafybmicjf5eulsyudab2a7fcfo5nh2ajhtupid5xx4fzr72m3tcysztyoi"
+
+HERE = Path(__file__).resolve()
+ROOT = HERE.parents[2]                  # .../A2A
+cfg_path = Path(os.getenv("CONFIG_PATH", ROOT / "config.json"))
+
+if not cfg_path.exists():
+    raise FileNotFoundError(f"config.json not found at: {cfg_path}")
+
+with cfg_path.open("r", encoding="utf-8") as f:
+    cfg = json.load(f)
+
+port = int(cfg.get("host_port", 20007))
+default_base_url = os.getenv("BASE_URL", f"http://localhost:{port}")
+print("Base URL =>", default_base_url)
+
+def get_default_did():
+    try:
+        url = f"{default_base_url}/api/get-by-node"
+        response = requests.get(url, timeout=5)
+        response.raise_for_status()
+        data = response.json()
+
+        # Get first DID if available
+        if data.get("TxnCount") and len(data["TxnCount"]) > 0:
+            return data["TxnCount"][0]["DID"]
+
+        print("⚠️ No DID found in API response, using fallback.")
+        return "fallback_did_here"
+
+    except Exception as e:
+        print(f"⚠️ Failed to fetch DID from API: {e}")
+        return "fallback_did_here"
+
+# Use the API result
+default_did = get_default_did()
+print("✅ Using DID:", default_did)
 
 def execute_nft(
     comment: str,
@@ -141,17 +178,17 @@ def execute_and_sign(
     }
 
 
-# ────────────── Example usage ──────────────
-if __name__ == "__main__":
-    out = execute_and_sign(
-        comment="new response",
-        nft="QmagiNcz23HVMzMeRp9VrGYHCJAMsbujEHJ2Q5QPZzeWEq",
-        password="mypassword",
-        executor="bafybmicjf5eulsyudab2a7fcfo5nh2ajhtupid5xx4fzr72m3tcysztyoi",
-        nft_data="string",
-        nft_value=1,
-        quorum_type=2,
-        receiver="",
-    )
-    print("Execute-NFT ID:", out["id"])
-    print("Signature:", out["signature"])
+# # ────────────── Example usage ──────────────
+# if __name__ == "__main__":
+#     out = execute_and_sign(
+#         comment="new response",
+#         nft="QmagiNcz23HVMzMeRp9VrGYHCJAMsbujEHJ2Q5QPZzeWEq",
+#         password="mypassword",
+#         executor="bafybmicjf5eulsyudab2a7fcfo5nh2ajhtupid5xx4fzr72m3tcysztyoi",
+#         nft_data="string",
+#         nft_value=1,
+#         quorum_type=2,
+#         receiver="",
+#     )
+#     print("Execute-NFT ID:", out["id"])
+#     print("Signature:", out["signature"])

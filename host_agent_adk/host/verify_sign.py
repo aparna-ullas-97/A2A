@@ -1,4 +1,6 @@
+import json
 import os
+from pathlib import Path
 import requests
 from typing import Optional
 
@@ -9,7 +11,21 @@ class APIError(Exception):
 
 
 # Base URL for the service (can override via env var)
-default_base_url = os.getenv("BASE_URL", "http://localhost:20007")
+# default_base_url = os.getenv("BASE_URL", "http://localhost:20007")
+
+HERE = Path(__file__).resolve()
+ROOT = HERE.parents[2]                  # .../A2A
+cfg_path = Path(os.getenv("CONFIG_PATH", ROOT / "config.json"))
+
+if not cfg_path.exists():
+    raise FileNotFoundError(f"config.json not found at: {cfg_path}")
+
+with cfg_path.open("r", encoding="utf-8") as f:
+    cfg = json.load(f)
+
+port = int(cfg.get("host_port", 20007))
+default_base_url = os.getenv("BASE_URL", f"http://localhost:{port}")
+print("Base URL =>", default_base_url)
 
 
 def verify_signature(
@@ -44,15 +60,15 @@ def verify_signature(
     return bool(data.get("status", False))
 
 
-# ────────────── Example usage ──────────────
-if __name__ == "__main__":
-    # Example parameters
-    signer = "bafybmicjf5eulsyudab2a7fcfo5nh2ajhtupid5xx4fzr72m3tcysztyoi"
-    message = "hello"
-    sig = "304402203ed035ead8950366231f0aac14c7aba8fdcd529eeba8734eb00dd98ed7bbf5530220448587e47c36a33de8ed9546fe4927acf26bdd4014a33006ad00c4d5f34efa8c"
+# # ────────────── Example usage ──────────────
+# if __name__ == "__main__":
+#     # Example parameters
+#     signer = "bafybmicjf5eulsyudab2a7fcfo5nh2ajhtupid5xx4fzr72m3tcysztyoi"
+#     message = "hello"
+#     sig = "304402203ed035ead8950366231f0aac14c7aba8fdcd529eeba8734eb00dd98ed7bbf5530220448587e47c36a33de8ed9546fe4927acf26bdd4014a33006ad00c4d5f34efa8c"
 
-    try:
-        valid = verify_signature(signer, message, sig)
-        print(f"Signature valid? {valid}")
-    except APIError as err:
-        print(f"Error verifying signature: {err}")
+#     try:
+#         valid = verify_signature(signer, message, sig)
+#         print(f"Signature valid? {valid}")
+#     except APIError as err:
+#         print(f"Error verifying signature: {err}")

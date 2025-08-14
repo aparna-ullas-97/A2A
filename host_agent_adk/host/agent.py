@@ -1,9 +1,11 @@
 import asyncio
 import json
+from pathlib import Path
 import uuid
 import os
 from datetime import datetime
 from typing import Any, AsyncIterable, List, Optional
+import requests
 
 import httpx
 import nest_asyncio
@@ -40,16 +42,52 @@ load_dotenv()
 nest_asyncio.apply()
 
 # Hardcoded NFT parameters (override via env vars if desired)
-DEFAULT_NFT_DID = "bafybmicjf5eulsyudab2a7fcfo5nh2ajhtupid5xx4fzr72m3tcysztyoi"
+# DEFAULT_NFT_DID = "bafybmicjf5eulsyudab2a7fcfo5nh2ajhtupid5xx4fzr72m3tcysztyoi"
 DEFAULT_METADATA_PATH = "/Users/rameshsubramani/Downloads/sample.json"
 DEFAULT_ARTIFACT_PATH = "/Users/rameshsubramani/Downloads/Bugs.pdf"
 DEFAULT_NFT_PASSWORD = "mypassword"
-DEFAULT_BASE_URL = "http://localhost:20007"
+# DEFAULT_BASE_URL = "http://localhost:20007"
 DEFAULT_TIMEOUT = 100.0
-DEFAULT_NFT_DATA = "optional data here"
+DEFAULT_NFT_DATA = "new responses"
 DEFAULT_NFT_VALUE = 5
 DEFAULT_QUORUM_TYPE = 2
 NFT_ID = ""
+
+HERE = Path(__file__).resolve()
+ROOT = HERE.parents[2]                  # .../A2A
+cfg_path = Path(os.getenv("CONFIG_PATH", ROOT / "config.json"))
+
+if not cfg_path.exists():
+    raise FileNotFoundError(f"config.json not found at: {cfg_path}")
+
+with cfg_path.open("r", encoding="utf-8") as f:
+    cfg = json.load(f)
+
+port = int(cfg.get("host_port", 20007))
+DEFAULT_BASE_URL = os.getenv("BASE_URL", f"http://localhost:{port}")
+print("Base URL =>", DEFAULT_BASE_URL)
+
+def get_default_did():
+    try:
+        url = f"{DEFAULT_BASE_URL}/api/get-by-node"
+        response = requests.get(url, timeout=5)
+        response.raise_for_status()
+        data = response.json()
+
+        # Get first DID if available
+        if data.get("TxnCount") and len(data["TxnCount"]) > 0:
+            return data["TxnCount"][0]["DID"]
+
+        print("⚠️ No DID found in API response, using fallback.")
+        return "fallback_did_here"
+
+    except Exception as e:
+        print(f"⚠️ Failed to fetch DID from API: {e}")
+        return "fallback_did_here"
+
+# Use the API result
+DEFAULT_NFT_DID = get_default_did()
+print("✅ Using DID:", DEFAULT_NFT_DATA)
 
 class HostAgent:
     """The Host agent."""
